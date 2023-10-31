@@ -7,7 +7,6 @@ use booru_db::{
     Query, Queryable, ID,
 };
 
-#[derive(Default)]
 pub struct BooruPost {
     id: u32,
     tags: Vec<String>,

@@ -258,7 +258,7 @@ macro_rules! db {
 
             pub fn query(
                 &self,
-                query: &::booru_db::Query<&str>,
+                query: &::booru_db::Query<String>,
             ) -> ::std::result::Result<
                 ::booru_db::QueryResult,
                 ::std::vec::Vec<::std::string::String>,
@@ -272,7 +272,7 @@ macro_rules! db {
                                 if self.identifiers.contains_key(&ident) {
                                     (ident, value)
                                 } else {
-                                    (::std::option::Option::None, *text)
+                                    (::std::option::Option::None, text.as_str())
                                 }
                             })
                             .unwrap_or((::std::option::Option::None, text));
