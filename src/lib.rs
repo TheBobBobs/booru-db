@@ -240,6 +240,22 @@ macro_rules! db {
                 self.indexes.get_mut()
             }
 
+            pub fn next_id(&self) -> ::booru_db::ID {
+                let checks = self.checks();
+                let mut id = checks.len() as u32 * ::booru_db::PACKED_SIZE;
+                'outer: for (index, &c) in checks.iter().enumerate() {
+                    if c != ::booru_db::Packed::MAX {
+                        for i in 0..::booru_db::PACKED_SIZE {
+                            if (c & (1 << i)) == 0 {
+                                id = (index as u32 * ::booru_db::PACKED_SIZE) + i;
+                                break 'outer;
+                            }
+                        }
+                    }
+                }
+                id
+            }
+
             fn insert_index<I: ::booru_db::Identifier, T: ::booru_db::index::Index<$post_type>>(
                 &mut self,
                 identifier: I,
