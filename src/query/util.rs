@@ -20,7 +20,7 @@ pub fn to_checks(ids: &[ID]) -> Vec<Packed> {
     let capacity = ((*ids.last().unwrap_or(&0) + 1) as f32 / PACKED_SIZE as f32).ceil() as usize;
     let mut checks = Vec::with_capacity(capacity);
     checks.extend((0..capacity).map(|_| 0));
-    Queryable::IDs(ids).run(&mut checks, false);
+    Queryable::IDs(ids).apply(&mut checks, false);
     checks
 }
 
@@ -28,7 +28,7 @@ pub fn to_ids(checks: &[Packed]) -> Vec<ID> {
     let capacity = checks.iter().map(|c| c.count_ones()).sum::<u32>() as usize;
     let mut ids = Vec::with_capacity(capacity);
     for (index, check) in checks.iter().enumerate() {
-        if check.count_ones() == 0 {
+        if *check == 0 {
             continue;
         }
         let index = index as u32 * PACKED_SIZE;

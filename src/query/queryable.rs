@@ -63,7 +63,7 @@ impl<'i> From<&'i QueryableOwned> for Queryable<'i> {
 }
 
 impl<'i> Queryable<'i> {
-    pub fn run(&self, checks: &mut [Packed], inverse: bool) {
+    pub fn apply(&self, checks: &mut [Packed], inverse: bool) {
         match self {
             Queryable::Checks(from) => apply_checks(from, checks, inverse),
             Queryable::ChecksOwned(from) => apply_checks(from, checks, inverse),
@@ -215,8 +215,8 @@ impl From<Vec<ID>> for QueryableOwned {
 }
 
 impl QueryableOwned {
-    pub fn run(&self, checks: &mut [Packed], inverse: bool) {
-        Queryable::from(self).run(checks, inverse);
+    pub fn apply(&self, checks: &mut [Packed], inverse: bool) {
+        Queryable::from(self).apply(checks, inverse);
     }
 
     pub fn contains(&self, id: ID) -> bool {
