@@ -63,6 +63,15 @@ impl<'i> From<&'i QueryableOwned> for Queryable<'i> {
 }
 
 impl<'i> Queryable<'i> {
+    fn borrowed(&'i self) -> Queryable<'i> {
+        match self {
+            Queryable::Checks(checks) => Queryable::Checks(checks),
+            Queryable::ChecksOwned(checks) => Queryable::Checks(checks.as_slice()),
+            Queryable::IDs(ids) => Queryable::IDs(ids),
+            Queryable::IDsOwned(ids) => Queryable::IDs(ids.as_slice()),
+        }
+    }
+
     pub fn apply(&self, checks: &mut [Packed], inverse: bool) {
         match self {
             Queryable::Checks(from) => apply_checks(from, checks, inverse),
@@ -73,20 +82,8 @@ impl<'i> Queryable<'i> {
     }
 
     pub fn and(&self, checks: &mut [Packed], inverse: bool) {
-        match self {
+        match self.borrowed() {
             Queryable::Checks(mask) => {
-                let iter = checks.iter_mut().zip(mask.iter());
-                if inverse {
-                    for (c, m) in iter {
-                        *c &= !m;
-                    }
-                } else {
-                    for (c, m) in iter {
-                        *c &= m;
-                    }
-                }
-            }
-            Queryable::ChecksOwned(mask) => {
                 let iter = checks.iter_mut().zip(mask.iter());
                 if inverse {
                     for (c, m) in iter {
@@ -106,35 +103,15 @@ impl<'i> Queryable<'i> {
                     *c &= m;
                 }
             }
-            Queryable::IDsOwned(ids) => {
-                let mut mask = Vec::from_iter(checks.iter().copied());
-                apply_ids(ids, &mut mask, inverse);
-                let iter = checks.iter_mut().zip(mask.iter());
-                for (c, m) in iter {
-                    *c &= m;
-                }
+            Queryable::ChecksOwned(_) | Queryable::IDsOwned(_) => {
+                unreachable!()
             }
         }
     }
 
     pub fn or(&self, checks: &mut [Packed], inverse: bool) {
-        match self {
+        match self.borrowed() {
             Queryable::Checks(mask) => {
-                let iter = checks.iter_mut().zip(mask.iter());
-                if inverse {
-                    for (c, m) in iter {
-                        *c |= !m;
-                    }
-                    for c in checks.iter_mut().skip(mask.len()) {
-                        *c = Packed::MAX;
-                    }
-                } else {
-                    for (c, m) in iter {
-                        *c |= m;
-                    }
-                }
-            }
-            Queryable::ChecksOwned(mask) => {
                 let iter = checks.iter_mut().zip(mask.iter());
                 if inverse {
                     for (c, m) in iter {
@@ -167,23 +144,8 @@ impl<'i> Queryable<'i> {
                     }
                 }
             }
-            Queryable::IDsOwned(ids) => {
-                if inverse {
-                    let mut mask = checks.to_vec();
-                    apply_ids(ids, &mut mask, inverse);
-                    let iter = checks.iter_mut().zip(mask.iter());
-                    for (c, m) in iter {
-                        *c |= m;
-                    }
-                } else {
-                    for id in ids.iter() {
-                        let index = (id / PACKED_SIZE) as usize;
-                        let offset = id % PACKED_SIZE;
-                        if index < checks.len() {
-                            checks[index] |= 1 << offset;
-                        }
-                    }
-                }
+            Queryable::ChecksOwned(_) | Queryable::IDsOwned(_) => {
+                unreachable!()
             }
         }
     }
